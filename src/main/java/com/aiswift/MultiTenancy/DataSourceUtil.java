@@ -1,5 +1,22 @@
 package com.aiswift.MultiTenancy;
 
-public class DataSourceUtil {
+import javax.sql.DataSource;
 
+import org.springframework.stereotype.Component;
+
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
+@Component
+public class DataSourceUtil {
+		public DataSource createDataSource(String dbName) {
+			HikariConfig config = new HikariConfig();
+			config.setJdbcUrl("jdbc:mysql://localhost:3306/" + dbName + "?serverTimezone=UTC");
+			config.setUsername("root");
+			config.setPassword("root");
+			config.setDriverClassName("com.mysql.cj.jdbc.Driver");
+			
+			return new HikariDataSource(config);
+		}
+		
 }
