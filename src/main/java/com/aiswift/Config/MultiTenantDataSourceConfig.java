@@ -1,5 +1,63 @@
 package com.aiswift.Config;
 
+import javax.sql.DataSource;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.transaction.PlatformTransactionManager;
+
+import com.aiswift.MultiTenancy.DataSourceUtil;
+import com.aiswift.MultiTenancy.TenantRoutingDataSource;
+
+import jakarta.persistence.EntityManagerFactory;
+
+@Configuration
+@DependsOn("globalEntityManagerFactory")
+@EnableJpaRepositories(
+		basePackages = "com.aiswift.Tenant.Repository",
+		entityManagerFactoryRef = "tenantEntityManagerFactory",
+		transactionManagerRef = "tenantTransactionManager")
 public class MultiTenantDataSourceConfig {
 
+	@Autowired
+	private DataSourceUtil dataSourceUtil;
+	
+	private static final Logger logger = LoggerFactory.getLogger(MultiTenantDataSourceConfig.class);
+	
+	@Bean(name="multiTenantDataSource")
+	public TenantRoutingDataSource multiTenantDataSource() {
+		TenantRoutingDataSource tenantRoutingDataSource = new TenantRoutingDataSource();
+		
+		tenantRoutingDataSource.addDataSource("default", dataSourceUtil.createDataSource("global_multi_tenant"));
+		
+		return tenantRoutingDataSource;
+	}
+	
+	@Bean(name = "tenantEntityManagerFactory")
+	@DependsOn("multiTenantDataSource")
+	public LocalContainerEntityManagerFactoryBean tenantEntityManagerFactory(EntityManagerFactoryBuilder builder,
+			@Qualifier("multiTenantDataSource") DataSource multiTenantDataSource) {
+		return builder
+				.dataSource(multiTenantDataSource)
+				.packages("com.aiswift.Tenant.Entity") 																												
+				.persistenceUnit("tenantPU")
+				.build();
+	}
+
+	@Bean(name = "tenantTransactionManager")
+	public PlatformTransactionManager tenantTransactionManager(
+			@Qualifier("tenantEntityManagerFactory") EntityManagerFactory entityManagerFactory) {
+		return new JpaTransactionManager(entityManagerFactory);
+	}
+	
+	
 }
