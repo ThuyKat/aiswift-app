@@ -12,69 +12,54 @@ import org.springframework.scheduling.annotation.Scheduled;
 
 import com.zaxxer.hikari.HikariDataSource;
 
-
-public class TenantRoutingDataSource extends AbstractRoutingDataSource{
-	
+public class TenantRoutingDataSource extends AbstractRoutingDataSource {
 	@Autowired
 	private DataSourceUtil dataSourceUtil;
-	
+
 	private final Map<Object, Object> dataSourceMap = new ConcurrentHashMap<>();
 	private final Map<Object, Long> lastUsedTime = new ConcurrentHashMap<>();
 
-		
 	@Override
-	protected Object determineCurrentLookupKey() {	
-		System.out.println("I am in TenantRouting DS, determining the lookup key on threadID: "+ Thread.currentThread().getId());
+	protected Object determineCurrentLookupKey() {
 		String tenant = TenantContext.getCurrentTenant();
-        System.out.println("Routing to database: " + tenant);
-
-		return tenant != null ? tenant : "default";
+		return (tenant != null) ? tenant : "default";
 	}
 
 	@Override
 	protected DataSource determineTargetDataSource() {
 		String tenant = (String) determineCurrentLookupKey();
 
+		// if not Hikari pool has not connected yet
 		dataSourceMap.computeIfAbsent(tenant, key -> {
-			System.out.println("[Lazy Init] Creating DataSource for tenant: " + tenant);
-			lastUsedTime.put(tenant, System.currentTimeMillis()); // save time when the connection starts
-			return dataSourceUtil.createDataSource(tenant);
+			lastUsedTime.put(tenant, System.currentTimeMillis()); // start time
+			return dataSourceUtil.createDataSource(tenant); // start the connection
 		});
 
-		lastUsedTime.put(tenant, System.currentTimeMillis()); // update connection time to the new time
-		return (DataSource) dataSourceMap.get(tenant);
+		// already connected
+		lastUsedTime.put(tenant, System.currentTimeMillis()); // update
+		return (DataSource) dataSourceMap.get(tenant); // return the connection
 	}
 
-	@Scheduled(fixedRate = 10 * 60 * 1000) // 10 mins
-	public void removeUnsedDataSources() {
+	@Scheduled(fixedRate = 10 * 60 * 1000)
+	public void removedUnusedDataSource() {
 		long now = System.currentTimeMillis();
-		long threshold = 30 * 60 * 1000; // 30 mins
-
-		for (Object tenant : new HashSet<>(dataSourceMap.keySet())) { // copy tenant key set to new hashSet,
-																		// avoid ConcurrentModificationException
+		long threshold = 30 * 60 * 1000;
+		for (Object tenant : new HashSet<>(dataSourceMap.keySet())) {
 			if (now - lastUsedTime.getOrDefault(tenant, 0L) > threshold) {
-				((HikariDataSource) dataSourceMap.remove(tenant)).close(); // remove then return HikariDataSource
-																			// instance, then close
+				// remove statement will return HikariDataSource, then close the pool connection
+				((HikariDataSource) dataSourceMap.remove(tenant)).close();
 				lastUsedTime.remove(tenant);
 			}
 		}
-
 	}
-    public void addDataSource(String databaseName, DataSource dataSource) {
-    	System.out.println("I am adding dataSource name: "+ databaseName);
-    	if(!dataSourceMap.containsKey(databaseName)) {
-    		  dataSourceMap.put(databaseName, dataSource);        
-    	        setTargetDataSources(dataSourceMap);
-    	        afterPropertiesSet(); // Reload data sources dynamically
-    	}      
-    }
-    
-    @Override
-    public void afterPropertiesSet() {
-        // Set a default tenant if none is set
-        if (TenantContext.getCurrentTenant() == null) {
-        	TenantContext.setCurrentTenant("default");
-        }
-        super.afterPropertiesSet();
-    }
+
+	public void addDataSource(String dbName, DataSource dataSource) {
+		if (!dataSourceMap.containsKey(dbName)) {
+			this.dataSourceMap.put(dbName, dataSource);
+			super.setTargetDataSources(dataSourceMap);
+			super.afterPropertiesSet();
+			System.out.println("DataSourceMap size: " + dataSourceMap.size());
+		}
+	}
+
 }

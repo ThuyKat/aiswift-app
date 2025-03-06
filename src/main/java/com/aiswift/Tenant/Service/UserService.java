@@ -1,31 +1,18 @@
 package com.aiswift.Tenant.Service;
 
-import java.util.Collections;
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import com.aiswift.Tenant.Entity.TenantUser;
-import com.aiswift.Tenant.Repository.TenantUserRepository;
-
+import com.aiswift.Tenant.Entity.User;
+import com.aiswift.Tenant.Repository.UserRepository;
 
 @Service
 public class UserService {
+	
 	@Autowired
-	private TenantUserRepository userRespository;
+	private UserRepository userRepository;
 	
-	public List<TenantUser> getAllUsers(){
-		List<TenantUser> users = userRespository.findAll();
-		return users.isEmpty() ? Collections.emptyList() : users;
+	public User getUserByEmail(String email) {
+		return userRepository.findByEmailWithPermissions(email);
 	}
-	
-	public TenantUser getUserByEmail(String email) {
-		return userRespository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("Tenant User Not found: " + email));
-	}
-	
-//	public TenantUser getUserByEmailWithPermission(String email) {
-//		return userRespository.findByEmailWithPermissions(email);
-//	}
 }
