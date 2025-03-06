@@ -5,8 +5,6 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import com.aiswift.Enum.Role;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -44,7 +42,7 @@ public class Developer {
 
 	@Enumerated(EnumType.STRING)
 	@Column
-	private Role role; //DEVELOPER
+	private Role role;
 
 	@Column(name = "created_at")
 	@CreationTimestamp
@@ -54,5 +52,7 @@ public class Developer {
 	@UpdateTimestamp
 	private LocalDateTime updatedAt;
 	
-	
+	public enum Role {
+		SUPER_ADMIN, ADMIN
+	}
 }
