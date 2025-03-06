@@ -5,12 +5,13 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import jakarta.persistence.JoinColumn;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
@@ -35,13 +36,17 @@ public class Role {
 	
 	@OneToMany (mappedBy="role")
 	@JsonIgnore
-	private List<TenantUser> users; //or Set?! list can have @OrderBy
+	private List<User> users; 
 	
 	
-	@ManyToMany //owning side @JoinTable, no mappedBy
-	//create table with 2 fk
-	@JoinTable(name="role_permission",joinColumns=@JoinColumn(name="role_id"), inverseJoinColumns=@JoinColumn(name="permission_id"))
-	@JsonManagedReference //owning - show permissons
+	@ManyToMany 	
+	@JoinTable (
+			name="role_permission",
+			joinColumns = @JoinColumn(name="role_id"),
+			inverseJoinColumns = @JoinColumn(name="permission_id")
+			)
+	@JsonManagedReference
 	private List<Permission> permissions = new ArrayList<>();
 		
 }
+

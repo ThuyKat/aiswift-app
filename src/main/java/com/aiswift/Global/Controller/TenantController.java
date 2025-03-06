@@ -1,4 +1,4 @@
-package com.aiswift.Tenant.Controller;
+package com.aiswift.Global.Controller;
 
 import java.util.Map;
 
@@ -10,8 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.aiswift.Tenant.Service.TenantService;
-
+import com.aiswift.Global.Service.TenantService;
 
 @RestController
 @RequestMapping("api/global")

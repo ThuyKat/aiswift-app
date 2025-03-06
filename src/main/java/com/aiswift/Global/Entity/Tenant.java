@@ -51,5 +51,13 @@ public class Tenant {
 	@JoinColumn(name="owner_id")
 	private Owner owner;
 	
+	@Enumerated(EnumType.STRING)
+	@Column (name = "owner_role")
+	private Role role;
+	
+	public enum Role {
+		OWNER, ADMIN
+	}
+	
 }
 
