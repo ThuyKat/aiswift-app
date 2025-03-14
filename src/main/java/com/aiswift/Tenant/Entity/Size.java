@@ -1,5 +1,6 @@
 package com.aiswift.Tenant.Entity;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.context.annotation.Conditional;
@@ -47,9 +48,9 @@ public class Size {
     private List<OrderDetail> orderDetails;
     
     @Column(name="size_price")
-    private Double sizePrice;
+    private BigDecimal sizePrice;
     
-    public Double getPrice() {
+    public BigDecimal getPrice() {
         return sizePrice != null ? sizePrice : product.getPrice();
     }
 }

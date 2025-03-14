@@ -1,5 +1,6 @@
 package com.aiswift.Tenant.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +41,7 @@ public class SizeService {
 		return sizeRepository.findByProductId(productId);
 	}
 
-	public Size addSize(String name, Long productId, Double finalPrice) {
+	public Size addSize(String name, Long productId, BigDecimal finalPrice) {
 		Product product = productRepository.findById(productId)
 				.orElseThrow(() -> new EntityNotFoundException("Category not found"));
 

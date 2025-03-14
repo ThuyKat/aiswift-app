@@ -1,6 +1,7 @@
 package com.aiswift.Tenant.Service;
 
 
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,14 +59,14 @@ public class OrderService {
 	    newOrder.setTenantId(currentTenant.getId());
 	    newOrder.setUser(user);
 	    newOrder.setOrderDetails(new HashSet<>());
-	    newOrder.setTotalPrice(0.0f);
+	    newOrder.setTotalPrice(BigDecimal.ZERO);
 	    newOrder.setStatus(OrderStatus.CREATED);
 	    
 	    // Save the order first to get an ID
 	    Order savedOrder = orderRepository.save(newOrder);
 	    
 	    // Add items to the order
-	    float totalPrice = 0.0f;
+	    BigDecimal totalPrice = BigDecimal.ZERO;
 	    
 	    for (AddItemRequestDto orderItem : items) {
 	        // Validate item data
@@ -91,8 +92,7 @@ public class OrderService {
 	        orderDetail.setProduct(productDB);
 	        orderDetail.setQuantity(quantity);
 	        orderDetail.setPrice(productDB.getPrice());
-	        orderDetail.setSubtotal(productDB.getPrice() * quantity);
-	        
+	        orderDetail.setSubtotal(productDB.getPrice().multiply(BigDecimal.valueOf(quantity)));	        
 	        // Handle size if applicable
 	        if (!productDB.getSizes().isEmpty() && sizeId != null) {
 	            Size sizeDB = sizeService.getSizesById(sizeId);
@@ -110,7 +110,8 @@ public class OrderService {
 	        savedOrder.getOrderDetails().add(savedDetail);
 	        
 	        // Add to total price
-	        totalPrice += orderDetail.getSubtotal();
+	        totalPrice = totalPrice.add(orderDetail.getSubtotal());
+
 	    }
 	    
 	    // Update the total price

@@ -1,6 +1,7 @@
 package com.aiswift.Tenant.Service;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -56,7 +57,7 @@ public class ProductService {
 		return productRepository.findProductByCategoryId(categoryId);
 	}
 
-	public Product addNewProduct(String name, float price, Long category_id, MultipartFile file) {
+	public Product addNewProduct(String name, BigDecimal price, Long category_id, MultipartFile file) {
 		Product savedProduct = null;
 
 		try {

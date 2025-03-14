@@ -1,5 +1,6 @@
 package com.aiswift.Tenant.Entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -78,7 +79,7 @@ private Category category;
 
 private String name;
 
-private float price;
+private BigDecimal price;
 
 @Column(columnDefinition = "TEXT")
 private String description;

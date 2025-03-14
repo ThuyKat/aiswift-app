@@ -1,5 +1,6 @@
 package com.aiswift.Tenant.Entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import org.springframework.context.annotation.Conditional;
@@ -47,9 +48,9 @@ private Order order;
 
 private int quantity;
 
-private double price;
+private BigDecimal price;
 
-private double subtotal;
+private BigDecimal subtotal;
 
 @ManyToOne
 @JoinColumn(name="size_id")

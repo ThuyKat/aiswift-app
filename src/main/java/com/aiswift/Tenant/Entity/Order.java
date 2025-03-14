@@ -1,6 +1,7 @@
 package com.aiswift.Tenant.Entity;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,8 +61,8 @@ public class Order implements Serializable {
 	@Column(name = "created_at")
 	private LocalDateTime createdAt = LocalDateTime.now();
 
-	@Column(name = "total_price")
-	private float totalPrice;
+	@Column(name = "total_price", precision = 10, scale = 2)
+	private BigDecimal totalPrice;
 
 	@OneToMany(mappedBy = "order") // name of object Order in OrderDetail
 	@JsonManagedReference
@@ -77,14 +78,6 @@ public class Order implements Serializable {
 	
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<OrderStatusHistory> statusHistory = new ArrayList<>();
-	
-	public void reset() {
-		if (this.orderDetails != null) {
-			this.status = null;
-			this.orderDetails.clear();
-			this.totalPrice = 0;
-		}
-	}
 	
 	public int getItemCount() {
 		return this.orderDetails.size();
