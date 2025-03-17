@@ -1,4 +1,4 @@
-package com.aiswift.dto;
+package com.aiswift.dto.Global;
 
 import java.util.ArrayList;
 import java.util.Collection;
