@@ -1,4 +1,4 @@
-package com.aiswift.dto.Global;
+package com.aiswift.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
