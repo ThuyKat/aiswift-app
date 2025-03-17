@@ -1,4 +1,4 @@
-package com.aiswift.dto.Tenant;
+package com.aiswift.dto;
 
 import java.util.List;
 
