@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.aiswift.Config.TenantDatabaseCondition;
-import com.aiswift.Exception.FileProcessingException;
 import com.aiswift.Tenant.Entity.Category;
 import com.aiswift.Tenant.Entity.Product;
 import com.aiswift.Tenant.Entity.Size;
@@ -20,14 +19,15 @@ import com.aiswift.Tenant.Repository.CategoryRepository;
 import com.aiswift.Tenant.Repository.OrderDetailRepository;
 import com.aiswift.Tenant.Repository.ProductRepository;
 import com.aiswift.Tenant.Repository.SizeRepository;
-import com.aiswift.dto.Tenant.ProductDto;
+import com.aiswift.dto.ProductDto;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
+
 @Slf4j
-@Conditional(TenantDatabaseCondition.class) // Only create for tenant databases
+@Conditional(TenantDatabaseCondition.class)  // Only create for tenant databases
 @Service
 public class ProductService {
 
@@ -36,10 +36,10 @@ public class ProductService {
 
 	@Autowired
 	private CategoryRepository categoryRepository;
-
+	
 	@Autowired
 	private SizeRepository sizeRepository;
-
+	
 	@Autowired
 	private OrderDetailRepository orderDetailRepository;
 
@@ -76,8 +76,6 @@ public class ProductService {
 		} catch (IOException e) {
 			e.printStackTrace();
 			log.info("UNABLE TO SAVE PRODUCT TO DATABASE");
-			log.error("Error processing image file", e);
-			throw new FileProcessingException("Unable to process image file", e);
 		}
 		return savedProduct;
 
@@ -97,34 +95,31 @@ public class ProductService {
 	}
 
 	@Transactional
-	public Product updateProduct(ProductDto productDto, Long productId){
-		try {
-			// find product by ID from database
-			Product productDB = productRepository.findById(productId)
-					.orElseThrow(() -> new EntityNotFoundException("Product not found"));
+	public void updateProduct(ProductDto productDto, Long productId, MultipartFile image) throws IOException {
 
-			if (productDto.getName() != null) {
-				productDB.setName(productDto.getName());
+		String productName = productDto.getName();
+		String productDescription = productDto.getDescription();
+		MultipartFile productImageData = productDto.getImageData();
+
+		// find product by ID from database
+
+		Optional<Product> productOptional = productRepository.findById(productId);
+		if (productOptional.isPresent()) {
+			Product productDB = productOptional.get();
+			productDB.setName(productName);
+			productDB.setDescription(productDescription);
+			if (productDB.getDescription().length() > 65535) { // Adjust based on the column type
+				throw new IllegalArgumentException("Description is too long.");
 			}
-			if (productDto.getDescription() != null) {
-				if (productDB.getDescription().length() > 65535) { // Adjust based on the column type
-					throw new IllegalArgumentException("Description is too long.");
-				}
-				productDB.setDescription(productDto.getDescription());
-			}
-			MultipartFile productImageData = productDto.getImageData();
-			if (productImageData != null && !productImageData.isEmpty()) {
+			if (image != null && !image.isEmpty()) {
 				productDB.setImageData(productImageData.getBytes());
 				productDB.setImageName(productImageData.getOriginalFilename());
 			}
 			productDB.setUpdatedBy("Thuy");
-			return productRepository.save(productDB);
-		} catch (IOException e) {
-			// Convert IOException to a runtime exception that can be handled by global
-			// exception handler
-			throw new FileProcessingException("Error processing image file", e);
-		}
+			productRepository.save(productDB);
+			// Add a flash attribute for the success message
 
+		}
 	}
 
 	public void safeDeleteProduct(Long productId) {
