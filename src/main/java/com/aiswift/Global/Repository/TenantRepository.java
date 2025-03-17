@@ -12,5 +12,4 @@ import com.aiswift.Global.Entity.Tenant;
 public interface TenantRepository extends JpaRepository<Tenant, Long> {
 	Tenant findByName(String name);
 	List<Tenant> findByOwnerId(Long ownerId);
-	Tenant findByDbName(String dbName);
 }
