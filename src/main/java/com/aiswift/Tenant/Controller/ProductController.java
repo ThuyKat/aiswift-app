@@ -21,9 +21,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.aiswift.Config.TenantDatabaseCondition;
+import com.aiswift.Tenant.DTO.ProductDto;
 import com.aiswift.Tenant.Entity.Product;
 import com.aiswift.Tenant.Service.ProductService;
-import com.aiswift.DTO.Tenant.ProductDto;
 
 @Conditional(TenantDatabaseCondition.class)  // Only create for tenant databases
 @RestController
@@ -73,7 +73,7 @@ public class ProductController {
 	 public ResponseEntity<Product> updateProduct(
 	     @PathVariable Long productId,
 	     @ModelAttribute ProductDto productDto
-	 ) {
+	 ){
 	     Product updatedProduct = productService.updateProduct(productDto, productId);
 	     return ResponseEntity.ok(updatedProduct);
 	 }

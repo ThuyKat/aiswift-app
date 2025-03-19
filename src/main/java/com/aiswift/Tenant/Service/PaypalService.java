@@ -17,10 +17,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+
+import com.aiswift.Tenant.DTO.AccessTokenResponse;
+import com.aiswift.Tenant.DTO.PaypalPaymentResponse;
 import com.aiswift.Tenant.Entity.PayPal;
 import com.aiswift.Tenant.Repository.PaypalRepository;
-import com.aiswift.DTO.Tenant.AccessTokenResponse;
-import com.aiswift.DTO.Tenant.PaypalPaymentResponse;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
@@ -171,11 +172,12 @@ public class PaypalService {
 	    
 		orderRequest.put("purchase_units", Arrays.asList(purchaseUnit));
 		
-		//add return_url and cancel_url for PayPal redirection
-		orderRequest.put("application_context", Map.of(
-				"return_url","http://localhost:8080/tenant/payment/confirm", // where paypal redirects users after they approve the payment
-				"cancel_url","http://localhost:8080/tenant/payment/cancel" // where Paypal redirects users if they cancel the payment process
-				));
+		// Add return_url and cancel_url with query parameters for PayPal redirection
+	    Map<String, String> applicationContext = new HashMap<>();
+	    applicationContext.put("return_url", "http://localhost:8080/tenant/payment/confirm?orderId=" + orderId);
+	    applicationContext.put("cancel_url", "http://localhost:8080/tenant/payment/cancel?orderId=" + orderId + "&amount=" + totalPayment);
+	    
+	    orderRequest.put("application_context", applicationContext);
 		
 		return orderRequest;
 	}
