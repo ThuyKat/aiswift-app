@@ -10,6 +10,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import com.aiswift.Common.Service.CustomUserDetailsService;
 
+
 @Configuration
 public class SecurityConfig {
 	
