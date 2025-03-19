@@ -8,9 +8,12 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.aiswift.Common.DTO.CustomUserDetails;
 import com.aiswift.Config.TenantDatabaseCondition;
 import com.aiswift.Exception.FileProcessingException;
 import com.aiswift.Tenant.DTO.ProductDto;
@@ -23,7 +26,6 @@ import com.aiswift.Tenant.Repository.ProductRepository;
 import com.aiswift.Tenant.Repository.SizeRepository;
 
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -86,7 +88,7 @@ public class ProductService {
 
 	}
 
-	@Transactional
+	@Transactional("tenantTransactionManager")
 	public void updatePrices(List<Product> products) {
 		// update prices in batch
 		for (Product product : products) {
@@ -99,7 +101,7 @@ public class ProductService {
 		}
 	}
 
-	@Transactional
+	@Transactional("tenantTransactionManager")
 	public Product updateProduct(ProductDto productDto, Long productId){
 		try {
 			// find product by ID from database
@@ -110,17 +112,17 @@ public class ProductService {
 				productDB.setName(productDto.getName());
 			}
 			if (productDto.getDescription() != null) {
-				if (productDB.getDescription().length() > 65535) { // Adjust based on the column type
+				if (productDto.getDescription().length() > 65535) { // Adjust based on the column type
 					throw new IllegalArgumentException("Description is too long.");
 				}
 				productDB.setDescription(productDto.getDescription());
 			}
-			MultipartFile productImageData = productDto.getImageData();
-			if (productImageData != null && !productImageData.isEmpty()) {
-				productDB.setImageData(productImageData.getBytes());
-				productDB.setImageName(productImageData.getOriginalFilename());
+			if (productDto.getImageData() != null && !productDto.getImageData().isEmpty()) {
+				productDB.setImageData(productDto.getImageData().getBytes());
+				productDB.setImageName(productDto.getImageData().getOriginalFilename());
 			}
-			productDB.setUpdatedBy("Thuy");
+			CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+			productDB.setUpdatedBy(userDetails.getUsername());
 			return productRepository.save(productDB);
 		} catch (IOException e) {
 			// Convert IOException to a runtime exception that can be handled by global
