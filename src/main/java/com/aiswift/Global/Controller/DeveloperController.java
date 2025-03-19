@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.aiswift.Global.DTO.OwnerResponse;
 
 
-
 @RestController
 @RequestMapping("/api/developer")
 public class DeveloperController {
