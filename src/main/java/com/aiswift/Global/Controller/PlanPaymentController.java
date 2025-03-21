@@ -22,6 +22,7 @@ import com.aiswift.Global.DTO.SubPlanRequest;
 import com.aiswift.Global.Entity.Owner;
 import com.aiswift.Global.Entity.Payment;
 import com.aiswift.Global.Entity.SubPlanDetail;
+import com.aiswift.Global.Entity.SubPlanDetail.PlanDetailStatus;
 import com.aiswift.Global.Entity.SubscriptionPlan;
 import com.aiswift.Global.Service.OwnerService;
 import com.aiswift.Global.Service.PaymentService;
@@ -58,11 +59,17 @@ public class PlanPaymentController {
 			Principal principal) {
 		logger.info("Starting first plan payment creation for user: {}", principal.getName());
 
-		// TODO: Check owner's current plan before proceeding (implement later)
-
 		// Retrieve owner details
 		Owner owner = ownerService.getOwnerByEmail(principal.getName());
 
+		// Get latest subscription plan
+		SubPlanDetail latestPlanDetail = subPlanDetailService.getLatestPlanDetailByOwner(owner);
+
+		// Block if the user already has an ACTIVE plan
+		if (latestPlanDetail != null && latestPlanDetail.getStatus() == PlanDetailStatus.ACTIVE) {
+			throw new RuntimeException(
+					"Owner already subscribed to a plan: " + latestPlanDetail.getSubscriptionPlan().getName());
+		}
 		// Calculate total subscription plan fee
 		SubscriptionPlan plan = subPlanService.getPlanById(request.getSubPlanId());
 
@@ -87,14 +94,14 @@ public class PlanPaymentController {
 
 	@PostMapping("/create-monthly-plan-payment")
 	public ResponseEntity<Object> createMonthlyPlanPayment(Principal principal) {
-	    logger.info("Starting monthly plan payment creation for user: {}", principal.getName());
+		logger.info("Starting monthly plan payment creation for user: {}", principal.getName());
 
 		// Retrieve owner details with subscription plan details
 		Owner owner = ownerService.getOwnerWithSubPlanDetails(principal.getName());
 
 		SubPlanDetail planDetail = subPlanDetailService.getLatestPlanDetailByOwner(owner);
-		
-		 // Get the subscription plan associated with the owner
+
+		// Get the subscription plan associated with the owner
 		SubscriptionPlan plan = planDetail.getSubscriptionPlan();
 
 		// Calculate total plan fee for the monthly payment
@@ -107,7 +114,7 @@ public class PlanPaymentController {
 
 		// Save payment record and payment details
 		paymentService.saveMonthlyPayment(owner, planDetail, totalPlanFee, paymentIntentDTO.getId(), plan);
-		
+
 		logger.info("Successfully created monthly plan payment for user: {}", principal.getName());
 		return new ResponseEntity<>(Map.of("PaymentIntentDTO", paymentIntentDTO), HttpStatus.OK);
 	}

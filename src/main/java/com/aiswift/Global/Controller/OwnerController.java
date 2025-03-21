@@ -101,4 +101,16 @@ public class OwnerController {
 						"planFee", totalPlanFee),
 				HttpStatus.OK);
 	}
+	
+	//Pagination
+	//1. plan upgrade
+	//2. plan cancellation
+	//3. tenant list - filter ->
+	//4. get each/1 tenant detail -> name, staff count, admin count, created at...(general) 
+	//5. switch tenant (by shop-name)
+	//6. all tenant stats? total tenant, total revenues,...monthly revenues(list month and revenue each month)
+	//7. top selling products (all)
+	//8. revenue of each tenant: name, revenue, orders
+	//9. detail revenue of 1 tenant: revenue by month
+	//9. 
 }
