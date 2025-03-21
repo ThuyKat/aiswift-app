@@ -14,6 +14,7 @@ import com.aiswift.Global.DTO.SubPlanRequest;
 import com.aiswift.Global.DTO.TenantLogDTO;
 import com.aiswift.Global.Entity.Owner;
 import com.aiswift.Global.Entity.SubPlanDetail;
+import com.aiswift.Global.Entity.SubPlanDetail.PlanDetailStatus;
 import com.aiswift.Global.Entity.SubscriptionPlan;
 import com.aiswift.Global.Entity.Tenant;
 import com.aiswift.Global.Repository.SubPlanDetailRepository;
@@ -39,6 +40,25 @@ public class SubPlanDetailService {
 		return subPlanDetailRepository.findTopByOwnerOrderBySubscriptionStartDesc(owner)
 				.orElseThrow(() -> new NoDataFoundException("No Subscription Plan Detail found."));
 	}
+	
+	@Transactional(transactionManager = "globalTransactionManager")
+	public SubPlanDetail changeOwnerLatestPlanDetailStatus(Owner owner, String status, long requestPlanDetailId) {
+		try {
+			SubPlanDetail planDetail = getLatestPlanDetailByOwner(owner);
+			
+			if(planDetail.getId() != requestPlanDetailId) {
+				throw new IllegalArgumentException("Invalid plan detail Id.");
+			}						
+			PlanDetailStatus newStatus = PlanDetailStatus.valueOf(status.toUpperCase());
+			planDetail.setStatus(newStatus);
+			
+			return subPlanDetailRepository.save(planDetail);
+			
+		}catch(IllegalArgumentException e) {
+			throw new IllegalArgumentException("Invalid status: " + status);
+		}		
+	}
+	
 	// + 30 days billing cycle
 	public void updateNextBillingDate(long id) {	
 		SubPlanDetail planDetail = getSubPlanDetailById(id);
@@ -56,8 +76,7 @@ public class SubPlanDetailService {
 			throw new NoDataFoundException("No Billing Cycle found.");
 		}		
 		return list;		
-	}
-	
+	}	
 	
 	// initial saving data to the table, Status: INACTIVE
 	@Transactional(transactionManager = "globalTransactionManager")

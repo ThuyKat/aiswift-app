@@ -2,14 +2,23 @@ package com.aiswift.Global.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.aiswift.Global.Entity.Payment;
 import com.aiswift.Global.Entity.ProrataDetail;
+import com.aiswift.Global.Repository.ProrataDetailRepository;
 
 @Service
 public class ProrataDetailService {
+	@Autowired
+	private ProrataDetailRepository prorataDetailRepository;
+	
+	public List<ProrataDetail> getProrataDetailListByPaymentId(long id){
+		return prorataDetailRepository.findByPaymentId(id);
+	}
 
 	//Calculate the prorata amount for a single transaction
 	public BigDecimal calculatePlanAdditionalfee(int count, int remainingDays, BigDecimal cost) {

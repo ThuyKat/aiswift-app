@@ -1,6 +1,7 @@
 package com.aiswift.Global.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,11 @@ import com.aiswift.Global.Repository.PaymentDetailRepository;
 public class PaymentDetailService {
 	@Autowired
 	private PaymentDetailRepository paymentDetailRepository;
+	
+	//return empty list []
+	public List<PaymentDetail> getPaymentDetailListByPaymentId(long id){
+		return paymentDetailRepository.findByPaymentId(id);				
+	}
 	
 	public PaymentDetail createPaymentDetail(Payment payment, int paymentTypeId, BigDecimal amount, int quantity, BigDecimal unitPrice) {
 	    PaymentDetail paymentDetail = new PaymentDetail();

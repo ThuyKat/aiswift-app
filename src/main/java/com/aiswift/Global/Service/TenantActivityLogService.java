@@ -1,5 +1,6 @@
 package com.aiswift.Global.Service;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +13,7 @@ import com.aiswift.Global.Repository.TenantActivityLogRepository;
 @Service
 public class TenantActivityLogService {
 	@Autowired
-	private TenantActivityLogRepository tenantActivityLogRepository;
+	private TenantActivityLogRepository tenantActivityLogRepository;	
 	
 	public void createTenantActivityLog(TenantLogDTO tenantLogDTO) {
 		TenantActivityLog tenantActivityLog = new TenantActivityLog();
@@ -25,4 +26,7 @@ public class TenantActivityLogService {
 		tenantActivityLogRepository.save(tenantActivityLog);
 	}
 	
+	public List<TenantActivityLog> getLogByOwnerId(long ownerId) {		
+		return tenantActivityLogRepository.findByOwnerId(ownerId);
+	}
 }
