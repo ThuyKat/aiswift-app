@@ -43,6 +43,7 @@ public class CustomUsernamePasswordAuthenticationFilter extends UsernamePassword
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
         try {
+        	System.out.println("I am in login filter");
             // Handle form-encoded data
             String username = request.getParameter("username");
             String password = request.getParameter("password");
