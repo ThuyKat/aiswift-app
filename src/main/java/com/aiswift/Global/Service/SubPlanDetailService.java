@@ -37,8 +37,9 @@ public class SubPlanDetailService {
 	}
 	
 	public SubPlanDetail getLatestPlanDetailByOwner(Owner owner) {
-		return subPlanDetailRepository.findTopByOwnerOrderBySubscriptionStartDesc(owner)
-				.orElseThrow(() -> new NoDataFoundException("No Subscription Plan Detail found."));
+//		return subPlanDetailRepository.findTopByOwnerOrderBySubscriptionStartDesc(owner)
+//				.orElseThrow(() -> new NoDataFoundException("No Subscription Plan Detail found."));
+		return subPlanDetailRepository.findTopByOwnerOrderBySubscriptionStartDesc(owner).orElse(null);
 	}
 	
 	@Transactional(transactionManager = "globalTransactionManager")
