@@ -6,16 +6,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
-import com.aiswift.Common.Service.CustomUserDetailsService;
-
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 public class SecurityConfig {
-	
-	@Autowired
-	CustomUserDetailsService customUserDetailsService;
 	
 	@Autowired
 	private TenantFilter tenantFilter;
@@ -23,17 +17,16 @@ public class SecurityConfig {
 	@Autowired
 	private JwtFilter jwtFilter;
 	
-	@Autowired CustomUsernamePasswordAuthenticationFilter loginFilter;
+	@Autowired
+	private CorsConfigurationSource corsConfig;
 	
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {	
 		http
 	     // Tenant filter runs before JWT filter
-        .addFilterBefore(tenantFilter, UsernamePasswordAuthenticationFilter.class)
-		
+        .addFilterBefore(tenantFilter, CustomUsernamePasswordAuthenticationFilter.class)
 		// JWT filter runs after tenant filter but before authentication
-        .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-   
+        .addFilterBefore(jwtFilter, CustomUsernamePasswordAuthenticationFilter.class)
 		.authorizeHttpRequests(
 				(requests) -> requests
 //				.requestMatchers("/api/login").permitAll()	
@@ -49,6 +42,7 @@ public class SecurityConfig {
 				.sessionManagement(session -> session
 			            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 				        )
+				.cors(cors -> cors.configurationSource(corsConfig))
 				.csrf(csrf -> csrf.disable());
 		
 		return http.build();		
