@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.aiswift.Enum.AdditionalType;
 import com.aiswift.Exception.NoDataFoundException;
 import com.aiswift.Global.DTO.PlanAdditionalPaymentRequest;
+import com.aiswift.Global.DTO.PlanUpgradeRequest;
 import com.aiswift.Global.DTO.SubPlanRequest;
 import com.aiswift.Global.Entity.Owner;
 import com.aiswift.Global.Entity.Payment;
@@ -40,7 +41,13 @@ public class PaymentService {
 	
 	@Autowired
 	private ProrataDetailRepository prorataDetailRepository;
-
+	
+	static final int PLAN_PAYMENT_ID = 1;
+	static final int ADDITIONAL_ADMIN_ID = 2;
+	static final int ADDITIONAL_TENAT_ID = 3;
+	static final int PLAN_UPGRADE_ID = 6;
+	static final int COUNT_ONE = 1;
+	
 	public Payment getPaymentById(long id) {
 		return paymentRepository.findById(id)
 				.orElseThrow(() -> new NoDataFoundException("No payment found for this id: " + id));
@@ -69,13 +76,13 @@ public class PaymentService {
 		List<PaymentDetail> paymentDetails = new ArrayList<>();
 		// each payment break down to different type
 		paymentDetails
-				.add(paymentDetailService.createPaymentDetail(payment, 1, plan.getBaseCost(), 1, plan.getBaseCost()));
+				.add(paymentDetailService.createPaymentDetail(payment, PLAN_PAYMENT_ID, plan.getBaseCost(), COUNT_ONE, plan.getBaseCost()));
 
 		if (request.getAdditionalAdminCount() > 0) {
 			BigDecimal additionalAdminAmount = plan.getAdditionalAmindFee()
 					.multiply(BigDecimal.valueOf(request.getAdditionalAdminCount()));
 
-			paymentDetails.add(paymentDetailService.createPaymentDetail(payment, 2, additionalAdminAmount,
+			paymentDetails.add(paymentDetailService.createPaymentDetail(payment, ADDITIONAL_ADMIN_ID, additionalAdminAmount,
 					request.getAdditionalAdminCount(), plan.getAdditionalAmindFee()));
 
 		}
@@ -83,7 +90,7 @@ public class PaymentService {
 			BigDecimal additionalTenantAmount = plan.getAdditionalTenantFee()
 					.multiply(BigDecimal.valueOf(request.getAdditionalTenantCount()));
 
-			paymentDetails.add(paymentDetailService.createPaymentDetail(payment, 3, additionalTenantAmount,
+			paymentDetails.add(paymentDetailService.createPaymentDetail(payment, ADDITIONAL_TENAT_ID, additionalTenantAmount,
 					request.getAdditionalTenantCount(), plan.getAdditionalTenantFee()));
 		}
 		if (paymentDetails.isEmpty()) {
@@ -109,18 +116,37 @@ public class PaymentService {
 		if (AdditionalType.ADMIN.name().equals(request.getAdditionalType())) {
 			prorataDetailRepository.save(
 					prorataDetailService.createProrataDetail(
-							payment, 2, request.getAmount(), request.getCount(), 
+							payment, ADDITIONAL_ADMIN_ID, request.getAmount(), request.getCount(), 
 							request.getPlan().getAdditionalAmindFee(), request.getRemainingDays()));
 			
 		}
 		if (AdditionalType.TENANT.name().equals(request.getAdditionalType())) {
 			prorataDetailRepository.save(
 					prorataDetailService.createProrataDetail(
-							payment, 3, request.getAmount(), request.getCount(), 
+							payment, ADDITIONAL_TENAT_ID, request.getAmount(), request.getCount(), 
 							request.getPlan().getAdditionalTenantFee(), request.getRemainingDays()));
 		}		
 
 	}
+	// save upgrade
+		@Transactional(transactionManager = "globalTransactionManager")
+		public void savePlanUpgradePayment(PlanUpgradeRequest request) {
+			// save to payment table
+			Payment payment = new Payment();
+			payment.setOwner(request.getOwner());
+			payment.setSubPlanDetail(request.getPlanDetail());
+			payment.setAmount(request.getAmount());
+			payment.setPaymentIntentId(request.getPaymentIntentId());
+			payment.setPaymentStatus(Payment.PaymentStatus.PENDING);
+
+			payment = paymentRepository.save(payment);
+			
+			prorataDetailRepository.save(
+					prorataDetailService.createProrataDetail(
+							payment, PLAN_UPGRADE_ID, request.getAmount(), COUNT_ONE, 
+							request.getPlan().getBaseCost(), request.getRemainingDays()));	
+
+		}
 	
 		// save 1st subscription
 		@Transactional(transactionManager = "globalTransactionManager")
@@ -139,7 +165,7 @@ public class PaymentService {
 			List<PaymentDetail> paymentDetails = new ArrayList<>();
 			// each payment break down to different type
 			paymentDetails
-					.add(paymentDetailService.createPaymentDetail(payment, 1, plan.getBaseCost(), 1, plan.getBaseCost()));
+					.add(paymentDetailService.createPaymentDetail(payment, PLAN_PAYMENT_ID, plan.getBaseCost(), COUNT_ONE, plan.getBaseCost()));
 			
 			int additionalAdminCount = planDetail.getAdditionalAdminCount();
 			int additionalTenantCount = planDetail.getAdditionalTenantCount();
@@ -148,7 +174,7 @@ public class PaymentService {
 				BigDecimal additionalAdminFee = plan.getAdditionalAmindFee()
 						.multiply(BigDecimal.valueOf(additionalAdminCount));
 
-				paymentDetails.add(paymentDetailService.createPaymentDetail(payment, 2, additionalAdminFee,
+				paymentDetails.add(paymentDetailService.createPaymentDetail(payment, ADDITIONAL_ADMIN_ID, additionalAdminFee,
 						additionalAdminCount, plan.getAdditionalAmindFee()));
 
 			}
@@ -156,7 +182,7 @@ public class PaymentService {
 				BigDecimal additionalTenantFee = plan.getAdditionalTenantFee()
 						.multiply(BigDecimal.valueOf(additionalTenantCount));
 
-				paymentDetails.add(paymentDetailService.createPaymentDetail(payment, 3, additionalTenantFee,
+				paymentDetails.add(paymentDetailService.createPaymentDetail(payment, ADDITIONAL_TENAT_ID, additionalTenantFee,
 						additionalTenantCount, plan.getAdditionalTenantFee()));
 			}
 			if (paymentDetails.isEmpty()) {

@@ -79,7 +79,7 @@ public class PlanPaymentController {
 
 		// Create Stripe PaymentIntent
 		PaymentIntentDTO paymentIntentDTO = stripeService.createPaymentIntent(totalPlanFee, principal.getName(),
-				StripePaymentType.SUBSCRIPTION.name(), 1);
+				StripePaymentType.SUBSCRIPTION.name(), 1, plan.getId());
 
 		// Save initial subscription plan details
 		SubPlanDetail planDetail = subPlanDetailService.saveInitialPlanDetail(request, owner, plan);
@@ -110,7 +110,7 @@ public class PlanPaymentController {
 
 		// Create Stripe PaymentIntent
 		PaymentIntentDTO paymentIntentDTO = stripeService.createPaymentIntent(totalPlanFee, principal.getName(),
-				StripePaymentType.MONTHLY_PAYMENT.name(), 1); // count: 1 ea
+				StripePaymentType.MONTHLY_PAYMENT.name(), 1, plan.getId()); // count: 1 ea
 
 		// Save payment record and payment details
 		paymentService.saveMonthlyPayment(owner, planDetail, totalPlanFee, paymentIntentDTO.getId(), plan);
@@ -133,6 +133,7 @@ public class PlanPaymentController {
 			// get payment type and count from metadata
 			String paymentTypeStr = paymentIntent.getMetadata().get("payment_type");
 			String countStr = paymentIntent.getMetadata().get("count");
+			String planIdStr = paymentIntent.getMetadata().get("subscription_plan_id");
 
 			if (paymentTypeStr == null && countStr == null) {
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Missing metadata fields.");
@@ -140,6 +141,7 @@ public class PlanPaymentController {
 			// parse to enum and int
 			StripePaymentType paymentType = StripePaymentType.fromString(paymentTypeStr);
 			int count = Integer.parseInt(countStr);
+			int planId = Integer.parseInt(planIdStr);
 
 			switch (paymentIntent.getStatus()) {
 			// NO ACTION
@@ -160,8 +162,8 @@ public class PlanPaymentController {
 			// case failed, card in valid, amount insufficient
 			case "failed":
 			case "requires_payment_method":
-				// handle 3 different payment types: subscription, xtra admin, xtra tenant
-				PaymentIntentDTO newPaymentIntentDTO = createNewPaymentIntent(payment, principal, paymentType, count);
+				// handle 4 different payment types: subscription, xtra admin, xtra tenant, upgrade
+				PaymentIntentDTO newPaymentIntentDTO = createNewPaymentIntent(payment, principal, paymentType, count, planId);
 				;
 
 				if (newPaymentIntentDTO == null) {
@@ -199,20 +201,23 @@ public class PlanPaymentController {
 	}
 
 	private PaymentIntentDTO createNewPaymentIntent(Payment payment, Principal principal, StripePaymentType paymentType,
-			int count) throws StripeException {
+			int count, int planId) throws StripeException {
 		switch (paymentType) {
 		case SUBSCRIPTION:
 			return stripeService.createPaymentIntent(payment.getAmount(), principal.getName(),
-					StripePaymentType.SUBSCRIPTION.name(), count);
+					StripePaymentType.SUBSCRIPTION.name(), count, planId);
 		case MONTHLY_PAYMENT:
 			return stripeService.createPaymentIntent(payment.getAmount(), principal.getName(),
-					StripePaymentType.MONTHLY_PAYMENT.name(), count);
+					StripePaymentType.MONTHLY_PAYMENT.name(), count, planId);
 		case ADDITIONAL_ADMIN:
 			return stripeService.createPaymentIntent(payment.getAmount(), principal.getName(),
-					StripePaymentType.ADDITIONAL_ADMIN.name(), count);
+					StripePaymentType.ADDITIONAL_ADMIN.name(), count, planId);
 		case ADDITIONAL_TENANT:
 			return stripeService.createPaymentIntent(payment.getAmount(), principal.getName(),
-					StripePaymentType.ADDITIONAL_TENANT.name(), count);
+					StripePaymentType.ADDITIONAL_TENANT.name(), count, planId);
+		case PLAN_UPGRADE:
+			return stripeService.createPaymentIntent(payment.getAmount(), principal.getName(),
+					StripePaymentType.PLAN_UPGRADE.name(), count, planId);
 		default:
 			return null;
 		}

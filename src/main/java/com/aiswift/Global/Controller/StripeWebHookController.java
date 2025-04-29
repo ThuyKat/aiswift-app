@@ -54,38 +54,49 @@ public class StripeWebHookController {
 			if (sigHeader == null || sigHeader.contains("fake_signature")) {
 				logger.warn("Skipping signature verification for local testing.");
 			} else {
-				Event event = Webhook.constructEvent(payload, sigHeader, endpointSecret);				
+				// get event Stripe: payment_intent.succeeded, charge.succeeded..
+				Event event = Webhook.constructEvent(payload, sigHeader, endpointSecret); 				
 				logger.info("Received Stripe Webhook Event: {}", event.getType());
 			
+				// get raw JSON inside event
 				String deserializer = event.getDataObjectDeserializer().getRawJson();
 				
+				// change raw JSON to Map<String, Object>
 				ObjectMapper mapper = new ObjectMapper();
 				Map<String, Object> map = mapper.readValue(deserializer, new TypeReference<Map<String, Object>>() {});
 				
 				System.out.println(map.get("id"));
+				
 				// payment successed
 				if ("payment_intent.succeeded".equals(event.getType())) {
+					// Stripe config for Stripe API: API key, accountID,..
 					RequestOptions requestOptions = stripeService.createRequestOptions(); 
 					PaymentIntent paymentIntent = PaymentIntent.retrieve(String.valueOf(map.get("id")), requestOptions);								
-				
+					
 					// no payment intent on Stripe
 					if (paymentIntent == null) {
 						logger.error("PaymentIntent is null in Webhook.");
 						throw new IllegalStateException("Stripe error: Invalid PaymentIntent.");						
 					}
+					
 					// get payment type and count from metadata
 					String paymentTypeStr = paymentIntent.getMetadata().get("payment_type");
 					String countStr = paymentIntent.getMetadata().get("count");
-
+					String planIdStr = paymentIntent.getMetadata().get("subscription_plan_id");
+					
 					if (paymentTypeStr == null && countStr == null) {
 						throw new IllegalStateException("Stripe error: Missing metadata fields.");						
 					}
-
+					
+					//change tp enum from String
 					StripePaymentType paymentType = StripePaymentType.fromString(paymentTypeStr);
+					
 					int count = Integer.parseInt(countStr);
+					int planId = Integer.parseInt(planIdStr);
+					
 					// get Payment object from paymentIntentId
 					Payment payment = paymentService.getPaymentByPaymentIntentId(paymentIntent.getId());
-
+					
 					// change from "PENDING, FAILED" to SUCCESS
 					paymentService.changePaymentStatusToSuccess(payment.getId());
 					
@@ -106,7 +117,12 @@ public class StripeWebHookController {
 						// update 30 days in next billing cycle
 						subPlanDetailService.updateNextBillingDate(payment.getSubPlanDetail().getId());
 						return ResponseEntity.ok("Successfully paid for this month Subscription.");
+					
 						
+					case PLAN_UPGRADE:
+						//update tenant count for new plan + current addtitional
+						subPlanDetailService.updateNewPlanUpgrade(payment.getSubPlanDetail().getId(), paymentType, count, planId);;
+						return ResponseEntity.ok("Upgrade to new Plan successfully.");	
 					default:
 						 throw new IllegalStateException("Stripe error: Invalid payment type.");						
 					}

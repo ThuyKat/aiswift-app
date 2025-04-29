@@ -29,7 +29,7 @@ public class StripeService {
 		return RequestOptions.builder().setApiKey(apiKey).build();
 	}
 
-	public PaymentIntentDTO createPaymentIntent(BigDecimal amount, String email, String paymentType, int count) {
+	public PaymentIntentDTO createPaymentIntent(BigDecimal amount, String email, String paymentType, int count, int planId) {
 		try {
 			RequestOptions requestOptions = createRequestOptions();
 
@@ -37,8 +37,12 @@ public class StripeService {
 			long amountInCents = amount.multiply(BigDecimal.valueOf(100)).longValueExact();
 			
 			PaymentIntent paymentIntent = PaymentIntent.create(PaymentIntentCreateParams.builder()
-					.setAmount(amountInCents).setCurrency("aud").setReceiptEmail(email)
-					.putMetadata("payment_type", paymentType).putMetadata("count", String.valueOf(count))
+					.setAmount(amountInCents)
+					.setCurrency("aud")
+					.setReceiptEmail(email)
+					.putMetadata("payment_type", paymentType) //MONTHLY_PAYMENT, PLAN_UPGRADE
+					.putMetadata("count", String.valueOf(count))
+					.putMetadata("subscription_plan_id", String.valueOf(planId)) // add plan id 
 					.setAutomaticPaymentMethods( // TESTING WITHOUT USING FE // No redirect
 							PaymentIntentCreateParams.AutomaticPaymentMethods.builder().setEnabled(true)
 									.setAllowRedirects(
