@@ -37,6 +37,7 @@ public class SecurityConfig {
 		.authorizeHttpRequests(
 				(requests) -> requests
 //				.requestMatchers("/api/login").permitAll()	
+				.requestMatchers("/stripe/webhook").permitAll() //allow Stripe.exe
 				.requestMatchers("/api/public/**").permitAll()
 				.requestMatchers("/api/developer/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
 				.requestMatchers("/api/admin/**").hasAnyRole("OWNER", "ADMIN")

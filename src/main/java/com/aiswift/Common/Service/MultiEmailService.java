@@ -22,7 +22,7 @@ public class MultiEmailService {
 
 	public void sendEmail(String toEmail, String subject, String body, boolean isDeveloper) throws MessagingException {
 		JavaMailSender mailSender = isDeveloper ? devMailSender : adminMailSender;
-
+		// send rich-format email
 		MimeMessage message = mailSender.createMimeMessage();
 		MimeMessageHelper helper = new MimeMessageHelper(message, true);
 
@@ -30,6 +30,7 @@ public class MultiEmailService {
 		helper.setFrom(senderEmail);
 		helper.setTo(toEmail);
 		helper.setSubject(subject);
+		//helper.setText(body, true); // true = enable HTML
 		helper.setText(body);
 
 		mailSender.send(message);
