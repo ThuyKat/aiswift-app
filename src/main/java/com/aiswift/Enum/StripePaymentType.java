@@ -2,7 +2,7 @@ package com.aiswift.Enum;
 
 
 public enum StripePaymentType {
-	SUBSCRIPTION, ADDITIONAL_ADMIN, ADDITIONAL_TENANT, MONTHLY_PAYMENT;
+	SUBSCRIPTION, ADDITIONAL_ADMIN, ADDITIONAL_TENANT, MONTHLY_PAYMENT, PLAN_UPGRADE;
 
 	public static StripePaymentType fromString(String type) {
 		try {

@@ -11,4 +11,5 @@ VALUES
 ('ADDITIONAL_TENANT', 'Payment for additional tenants beyond the plan limit.'),
 ('DISCOUNT', 'Applied discount to the total payment.'),
 ('REFUND', 'Refund issued to the owner.'),
+('PLAN_UPGRADE', 'Upgrade to a new plan.'),
 ('CANCELLATION_FEE', 'Fee charged when canceling a subscription before the end of the billing cycle.');
