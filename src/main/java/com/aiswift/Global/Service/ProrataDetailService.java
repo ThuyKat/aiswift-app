@@ -29,6 +29,15 @@ public class ProrataDetailService {
 		return costPerAdditional.multiply(BigDecimal.valueOf(count));
 	}
 	
+	//Calculate the prorata amount for a upgrade cost
+		public BigDecimal calculateUpgradePlanFee(int remainingDays, BigDecimal oldCost, BigDecimal newCost) {			
+			//using divide + RoundingMode... to avoid 3.33333
+			//gap cost: (49 - 29)/30 * 8
+			return (newCost.subtract(oldCost)).multiply(BigDecimal.valueOf(remainingDays))
+					.divide(BigDecimal.valueOf(30),2, RoundingMode.HALF_UP);				
+		}
+	
+	
 	//create new prorata object
 	public ProrataDetail createProrataDetail(Payment payment, int paymentTypeId, BigDecimal amount, int quantity, BigDecimal unitPrice, int remainingDays) {
 		ProrataDetail prorataDetail = new ProrataDetail();

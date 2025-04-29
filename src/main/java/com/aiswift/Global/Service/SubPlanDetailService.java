@@ -26,7 +26,15 @@ public class SubPlanDetailService {
 	private SubPlanDetailRepository subPlanDetailRepository;
 	
 	@Autowired
+	private SubscriptionPlanService subscriptionPlanService;
+	
+	@Autowired
 	private TenantActivityLogService tenantActivityLogService;
+	
+	private static final int ADD_ADDITIONAL_ADMIN = 1;
+	private static final int ADD_ADDITIONAL_TENANT = 5;
+	private static final int CREATE_NEW_TENANT = 7;
+	private static final int UPGRADE_PLAN = 8;
 
 	public SubPlanDetail getSubPlanDetailById(long id) {
 		return subPlanDetailRepository.findById(id)
@@ -38,8 +46,8 @@ public class SubPlanDetailService {
 	
 	public SubPlanDetail getLatestPlanDetailByOwner(Owner owner) {
 		return subPlanDetailRepository.findTopByOwnerOrderBySubscriptionStartDesc(owner)
-				.orElseThrow(() -> new NoDataFoundException("No Subscription Plan Detail found."));
-	}
+				.orElse(null);
+		}
 	
 	@Transactional(transactionManager = "globalTransactionManager")
 	public SubPlanDetail changeOwnerLatestPlanDetailStatus(Owner owner, String status, long requestPlanDetailId) {
@@ -118,7 +126,7 @@ public class SubPlanDetailService {
 		tenantLogDTO.setOwner(owner);
 		tenantLogDTO.setTenantId(tenant.getId());
 		// CREATE NEW TENANT;
-		tenantLogDTO.setActionTypeId(7);
+		tenantLogDTO.setActionTypeId(CREATE_NEW_TENANT);
 		tenantLogDTO.setOldValue(String.valueOf(activeTenantCount));
 		tenantLogDTO.setNewValue(String.valueOf(updatedActiveTenantCount));
 		tenantLogDTO.setMessage(String.format("Create new Tenant with database name: %s", tenant.getDbName()));	
@@ -140,7 +148,7 @@ public class SubPlanDetailService {
 		// ENUM is a SINGLETON, 1 object 1 reference
 		if (paymentType == StripePaymentType.ADDITIONAL_ADMIN) {
 			planDetail.setAdditionalAdminCount(planDetail.getAdditionalAdminCount() + count);				
-			tenantLogDTO.setActionTypeId(1); // ADD NEW ADMIN
+			tenantLogDTO.setActionTypeId(ADD_ADDITIONAL_ADMIN); // ADD NEW ADMIN
 			tenantLogDTO.setOldValue(String.valueOf(planDetail.getAdditionalAdminCount() - count));
 			tenantLogDTO.setNewValue(String.valueOf(planDetail.getAdditionalAdminCount()));
 			tenantLogDTO.setMessage(String.format("Add %d new additional Admin", count));	
@@ -149,7 +157,7 @@ public class SubPlanDetailService {
 			planDetail.setAdditionalTenantCount(planDetail.getAdditionalTenantCount() + count);
 			planDetail.setMaxTenant(planDetail.getMaxTenant() + count);	
 						
-			tenantLogDTO.setActionTypeId(5); // ADD NEW TENANT
+			tenantLogDTO.setActionTypeId(ADD_ADDITIONAL_TENANT); // ADD NEW TENANT
 			tenantLogDTO.setOldValue(String.valueOf(planDetail.getAdditionalTenantCount() - count));
 			tenantLogDTO.setNewValue(String.valueOf(planDetail.getAdditionalTenantCount()));
 			tenantLogDTO.setMessage(String.format("Add %d new additional tenant, Max tenant now is %d", count,
@@ -170,5 +178,33 @@ public class SubPlanDetailService {
         System.err.println("Error in transaction: " + e.getMessage());
         e.printStackTrace();
     }
+	}
+	//update tenant count for new plan + current addtitional
+	@Transactional(transactionManager = "globalTransactionManager")
+	public void updateNewPlanUpgrade(long planDetailId, StripePaymentType paymentType, int count, int newPlanId) {
+		SubPlanDetail planDetail = getSubPlanDetailById(planDetailId);
+		// get old plan id		
+		int oldPlanId = planDetail.getSubscriptionPlan().getId();
+		
+		// get new plan
+		SubscriptionPlan plan = subscriptionPlanService.getPlanById(newPlanId);
+		//save new plan + update max tenant
+		planDetail.setSubscriptionPlan(plan);
+		planDetail.setMaxTenant(plan.getTenantLimit() + planDetail.getAdditionalTenantCount());
+		subPlanDetailRepository.save(planDetail);
+		
+		//update log
+		TenantLogDTO tenantLogDTO = new TenantLogDTO();		
+		Owner owner = planDetail.getOwner();
+		
+		tenantLogDTO.setOwner(owner);
+		tenantLogDTO.setTenantId(-1);
+		// UPGRADE PLAN 8;
+		tenantLogDTO.setActionTypeId(UPGRADE_PLAN);
+		tenantLogDTO.setOldValue(String.valueOf(oldPlanId));
+		tenantLogDTO.setNewValue(String.valueOf(newPlanId));
+		tenantLogDTO.setMessage(String.format("Upgrade to new plan: %s", plan.getName()));	
+		
+		tenantActivityLogService.createTenantActivityLog(tenantLogDTO);	
 	}
 }

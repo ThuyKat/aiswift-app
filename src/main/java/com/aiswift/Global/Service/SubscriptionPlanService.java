@@ -28,6 +28,11 @@ public class SubscriptionPlanService {
 				.orElseThrow(() -> new NoDataFoundException("No plan found."));				
 	}
 	
+	public BigDecimal getPlanBaseCostById(int id) {
+		SubscriptionPlan plan = getPlanById(id);
+		return plan.getBaseCost();			
+	}
+	
 	//calculate fee for 1st time subscribe the plan 
 	public BigDecimal calculatePlanFee(int additionalAdmin, int additionalTenant, SubscriptionPlan plan) {				
 		BigDecimal baseCost = plan.getBaseCost();
