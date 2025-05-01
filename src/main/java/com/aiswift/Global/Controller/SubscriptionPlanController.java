@@ -17,6 +17,7 @@ public class SubscriptionPlanController {
 	@Autowired
 	private SubscriptionPlanService subPlanService;
 
+	//show all plans for owner to select
 	@GetMapping("/subscription-plans")
 	public ResponseEntity<Object> getAllSubcriptionPlans() {	
 			List<SubscriptionPlan> plans = subPlanService.getSubscriptionPlanList();
