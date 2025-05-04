@@ -1,5 +1,6 @@
 package com.aiswift.Tenant.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -23,4 +24,10 @@ public interface TenantUserRepository extends JpaRepository<TenantUser, Long>{
 	boolean existsByEmail(String email);
 	
 	Optional<TenantUser> findByResetToken(String token);
+	
+	@Query("SELECT COUNT(u) FROM TenantUser u")
+	long getTotalStaffCount();
+	
+	@Query("SELECT u.role.name, COUNT(u) FROM TenantUser u GROUP BY u.role.name")
+	List<Object[]> countUsersByRole();
 }
