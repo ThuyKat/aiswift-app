@@ -15,10 +15,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.aiswift.Enum.Status;
 import com.aiswift.Exception.NoDataFoundException;
 import com.aiswift.Global.DTO.TenantLogDTO;
 import com.aiswift.Global.Entity.Owner;
@@ -51,12 +54,12 @@ public class TenantService {
 	private SubPlanDetailRepository subPlanDetailRepository;
 	
 	private final JdbcTemplate jdbcTemplate;
-    private static final Logger logger = LoggerFactory.getLogger(TenantService.class);
-	
 	public TenantService(JdbcTemplate jdbcTemplate) {
 		this.jdbcTemplate = jdbcTemplate;
 	}
-
+	
+	private static final Logger logger = LoggerFactory.getLogger(TenantService.class);
+	
 	public List<Tenant> getAllTenant() {
 		return tenantRepository.findAll();
 	}
@@ -72,10 +75,19 @@ public class TenantService {
 	}
 
 	public List<Tenant> getTenantsByOwnerId(Long ownerId) {
-		List<Tenant> tenants = tenantRepository.findByOwnerId(ownerId);
-		return tenants.isEmpty() ? Collections.emptyList() : tenants;
+		return tenantRepository.findByOwnerId(ownerId); //if empty return []
+//		return tenants.isEmpty() ? Collections.emptyList() : tenants;
 	}
-
+	
+	public Page<Tenant> getTenantsByOwnerId(Pageable pageable, Long ownerId) {
+		return tenantRepository.findByOwnerIdAndStatusOrderByCreatedAtDesc(pageable, ownerId, Status.ACTIVE); //page empty will be handle in PageImpl
+//		return tenants.isEmpty() ? Page.empty(): tenants;
+	}
+	
+	public List<Tenant> getTenantsByOwnerEmail(String email) {
+		return tenantRepository.findByOwnerEmail(email); //if empty return []
+	}
+	
 	public Tenant getTenantById(Long id) {
 		return tenantRepository.findById(id)
 				.orElseThrow(() -> new NoDataFoundException(String.format("No tenant found with Id: %d", id)));
@@ -166,7 +178,7 @@ public class TenantService {
 	public void updateAdminCount(Long tenantId, int count, Owner owner, SubPlanDetail planDetail) {
 		Tenant tenant = getTenantById(tenantId);
 		
-		tenant.setMaxAdminCount(tenant.getMaxAdminCount() + count); //only update total, not created admin
+		tenant.setMaxAdminCount(tenant.getMaxAdminCount() + count); //only update total, not create new admin
 		tenantRepository.save(tenant);
 		
 		DataSource tenantDataSource = dataSourceUtil.createDataSource(tenant.getDbName());
